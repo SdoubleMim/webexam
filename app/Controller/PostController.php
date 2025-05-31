@@ -3,15 +3,38 @@ namespace App\Controller;
 
 use App\Model\Post;
 
+// At the top of PostController.php
+use Illuminate\Support\Facades\DB;
+
+use Exception; 
+
 class PostController {
     public function index() {
         $posts = Post::with('user')->get();
         view('posts/index', compact('posts'));
     }
 
-    public function show($id) {
-        $post = Post::with('user')->findOrFail($id);
-        view('posts/show', compact('post'));
+        // Add this if not using Laravel's abort helper
+    protected function abort($code, $message = '') {
+        http_response_code($code);
+        die($message);
+    }
+
+    public function show($id)
+    {
+        try {
+            $post = Post::with('user')->find($id);
+            
+            if (!$post) {
+                throw new Exception("Post not found");
+            }
+            
+            return view('posts/show', ['post' => $post]);
+            
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+            abort(404, 'Post not found');
+        }
     }
 
     public function create() {
@@ -22,16 +45,28 @@ class PostController {
         Post::create([
             'title' => $_POST['title'],
             'content' => $_POST['content'],
-            'user_id' => 1 // فعلاً دستی یا از session
+            'user_id' => $_POST['user_id'] ?? 1 // Default to 1 if not provided
         ]);
         redirect('/posts');
     }
 
-// در PostController.php
-    public function edit($id) {
-        $post = Post::find($id);
-        view('posts/edit', ['post' => $post]); // ارسال داده به ویو
+    public function edit($id)
+    {
+        try {
+            $post = Post::find($id);
+            
+            if (!$post) {
+                throw new Exception("Post not found");
+            }
+            
+            return view('posts/edit', ['post' => $post]);
+            
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+            abort(404, 'Post not found');
+        }
     }
+    
     public function update($id) {
         $post = Post::findOrFail($id);
         $post->update([
@@ -46,9 +81,15 @@ class PostController {
         $post->delete();
         redirect('/posts');
     }
+
+    // Temporary connection test method
+    public function testConnection() {
+        try {
+            DB::connection()->getPdo();
+            echo "Connected successfully to: " . DB::connection()->getDatabaseName();
+        } catch (\Exception $e) {
+            die("Could not connect to the database. Error: " . $e->getMessage());
+        }
+    }
+
 }
-echo '<pre>';
-var_dump($post);
-echo '</pre>';
-die();
-?>

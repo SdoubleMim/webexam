@@ -16,43 +16,70 @@ class Route {
         $requestMethod = $_SERVER['REQUEST_METHOD'];
         $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-        // حذف مسیر پوشه پروژه از URL
-        $basePath = '/webexam'; // ← اگر پروژه در localhost/webexam است
+        // Remove base path
+        $basePath = '/webexam';
         $requestUri = str_replace($basePath, '', $requestUri);
         $requestUri = $requestUri ?: '/';
 
         foreach ($this->routes as $route) {
-            if ($route['method'] !== $requestMethod) continue;
+            // Method check
+            if ($route['method'] !== $requestMethod) {
+                continue;
+            }
 
-            // تبدیل مسیرهای داینامیک {id} به regex
-            $pattern = preg_replace('#\{[\w]+\}#', '([\w-]+)', $route['path']);
-            $pattern = "#^" . $pattern . "$#";
+            // Convert route pattern to regex
+            $pattern = $this->convertToRegex($route['path']);
 
             if (preg_match($pattern, $requestUri, $matches)) {
-                array_shift($matches); // حذف full match
-                $handler = $route['handler'];
+                // حذف full match (index 0)
+                array_shift($matches);
 
-                // اگر handler تابع است
-                if (is_callable($handler)) {
-                    call_user_func_array($handler, $matches);
-                    return;
-                }
+                // فقط مقادیر positional نگه‌دار (با کلید عددی)
+                $matches = array_filter($matches, 'is_int', ARRAY_FILTER_USE_KEY);
+                $matches = array_values($matches); // مرتب‌سازی مجدد از index صفر
 
-                // اگر handler کلاس + متد است
-                $controller = new $handler[0];
-                $method = $handler[1];
-                call_user_func_array([$controller, $method], $matches);
+                // Handle the route
+                $this->handleRoute($route['handler'], $matches);
                 return;
             }
         }
 
-        // نمایش صفحه 404
-        http_response_code(404);
-        $viewPath = __DIR__ . '/../views/404.php';
-        if (file_exists($viewPath)) {
-            require $viewPath;
-        } else {
-            echo "صفحه مورد نظر یافت نشد!";
+        // 404 Not Found
+        $this->abort(404);
+    }
+
+
+    private function convertToRegex($path) {
+        // Replace {param} with regex capture
+        $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>[^\/]+)', $path);
+        return '#^' . $pattern . '$#';
+    }
+
+    private function handleRoute($handler, $params) {
+        if (is_callable($handler)) {
+            call_user_func_array($handler, $params);
+            return;
         }
+
+        if (is_array($handler) && count($handler) === 2) {
+            $className = $handler[0];
+            $methodName = $handler[1];
+            
+            if (class_exists($className)) {
+                $controller = new $className();
+                
+                if (method_exists($controller, $methodName)) {
+                    call_user_func_array([$controller, $methodName], $params);
+                    return;
+                }
+            }
+        }
+
+        $this->abort(500, 'Invalid route handler');
+    }
+
+    private function abort($code, $message = '') {
+        http_response_code($code);
+        die($message);
     }
 }

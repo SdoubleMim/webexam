@@ -1,34 +1,20 @@
-<?php include_once ROOT_PATH . '/views/partials/header.php'; ?>
+<?php
+include_once ROOT_PATH . '/views/partials/header.php';
 
-<div class="container mt-4">
-    <?php if (!isset($post)): ?>
-        <div class="alert alert-danger">پست موردنظر وجود ندارد!</div>
-    <?php else: ?>
-        <h2>ویرایش پست</h2>
-        <form action="/posts/<?= $post->id ?>/update" method="POST">
-            <div class="form-group">
-                <label>عنوان:</label>
-                <input 
-                    type="text" 
-                    name="title" 
-                    class="form-control"
-                    value="<?= htmlspecialchars($post->title) ?>" 
-                    required
-                >
-            </div>
-            <div class="form-group">
-                <label>محتوا:</label>
-                <textarea 
-                    name="content" 
-                    class="form-control"
-                    required
-                ><?= htmlspecialchars($post->content) ?></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
-        </form>
-    <?php endif; ?>
+// Add null checks before accessing properties
+if (!isset($post) || $post === null) {
+    die('Post not found or invalid');
+}
+?>
 
-    <a href="/posts" class="btn btn-secondary mt-3">بازگشت به لیست پست‌ها</a>
+<div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" name="title" value="<?= htmlspecialchars($post->title ?? '') ?>">
+</div>
+
+<div class="form-group">
+    <label for="content">Content</label>
+    <textarea name="content"><?= htmlspecialchars($post->content ?? '') ?></textarea>
 </div>
 
 <?php include_once ROOT_PATH . '/views/partials/footer.php'; ?>

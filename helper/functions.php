@@ -4,46 +4,48 @@
  * Place this file in: `app/helper/functions.php`
  */
 
-// ------ توابع اصلی سیستم ------
+// ------ Core System Functions ------
 
 /**
  * Render a view with optional data
- * @param string $path (e.g., 'home', 'users/profile')
- * @param array $data (optional) Data to pass to the view
- * @throws Exception if view not found
  */
 function view(string $path, array $data = []): void {
-    $fullPath = ROOT_PATH . '/views/' . ltrim($path, '/') . '.php';
-    
-    if (!file_exists($fullPath)) {
-        throw new Exception("View file not found: {$fullPath}");
-    }
-
-    extract($data, EXTR_SKIP); // Convert array keys to variables
-    require_once $fullPath;
+    extract($data);
+    require ROOT_PATH . "/views/{$path}.php";
 }
 
 /**
- * Redirect to a URL
- * @param string $url (e.g., '/users', '/login')
- * @param int $statusCode (HTTP status code, default: 303)
+ * Abort with HTTP status code
+ */
+function abort(int $code, string $message = ''): void {
+    http_response_code($code);
+    die($message);
+}
+
+/**
+ * Redirect to URL
  */
 function redirect(string $url, int $statusCode = 303): void {
     header('Location: ' . $url, true, $statusCode);
-    die();
+    exit();
 }
 
 /**
- * Check if user is logged in (requires session_start())
+ * Check authentication status
  */
 function is_logged_in(): bool {
-    return isset($_SESSION['user_id']);
+    return !empty($_SESSION['user_id']);
 }
 
-
+/**
+ * Get old form input value
+ */
+function old(string $key, string $default = ''): string {
+    return htmlspecialchars($_POST[$key] ?? $default);
+}
 
 /**
- * Get database connection (for raw queries)
+ * Get database connection
  */
 function db(): \Illuminate\Database\Connection {
     global $capsule;
