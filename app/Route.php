@@ -6,14 +6,15 @@ class Route {
     private $basePath = '';
 
     public function __construct($basePath = '') {
-        $this->basePath = $basePath;
+        $this->basePath = rtrim($basePath, '/');
     }
 
     public function addRoute($method, $path, $handler) {
         $this->routes[] = [
             'method' => strtoupper($method),
             'path' => $path,
-            'handler' => $handler
+            'handler' => $handler,
+            'is_dynamic' => strpos($path, '{') !== false
         ];
     }
 
@@ -25,9 +26,14 @@ class Route {
         foreach ($this->routes as $route) {
             if ($route['method'] !== $requestMethod) continue;
 
-            $pattern = $this->convertToRegex($route['path']);
-            if (preg_match($pattern, $requestUri, $matches)) {
-                $this->handleRoute($route['handler'], array_values(array_filter($matches, 'is_int', ARRAY_FILTER_USE_KEY)));
+            if ($route['is_dynamic']) {
+                $pattern = $this->convertToRegex($route['path']);
+                if (preg_match($pattern, $requestUri, $matches)) {
+                    $this->handleRoute($route['handler'], array_values(array_filter($matches, 'is_int', ARRAY_FILTER_USE_KEY)));
+                    return;
+                }
+            } elseif ($route['path'] === $requestUri) {
+                $this->handleRoute($route['handler'], []);
                 return;
             }
         }
@@ -41,24 +47,26 @@ class Route {
     private function handleRoute($handler, $params) {
         if (is_string($handler)) {
             if (!str_contains($handler, '@')) {
-                $this->abort(500, 'Invalid handler format (use "Controller@method")');
+                $this->abort(500, 'فرمت هندلر نامعتبر (باید به صورت "Controller@method" باشد)');
             }
+            
             [$controllerName, $methodName] = explode('@', $handler);
             $controllerClass = "App\\Controller\\$controllerName";
             
             if (!class_exists($controllerClass)) {
-                $this->abort(500, "Controller $controllerClass not found");
+                $this->abort(500, "کنترلر $controllerClass یافت نشد");
             }
             
             $controller = new $controllerClass();
             if (!method_exists($controller, $methodName)) {
-                $this->abort(500, "Method $methodName not found in $controllerClass");
+                $this->abort(500, "متد $methodName در کنترلر $controllerClass وجود ندارد");
             }
             
             call_user_func_array([$controller, $methodName], $params);
             return;
         }
-        $this->abort(500, 'Handler must be string or callable');
+        
+        $this->abort(500, 'هندلر باید رشته یا callable باشد');
     }
 
     private function abort($code, $message = '') {

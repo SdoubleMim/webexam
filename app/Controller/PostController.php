@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 use Exception; 
 
+use App\Model\RelatedPost;
 class PostController {
     public function index() {
         $posts = Post::with('user')->get();
@@ -87,4 +88,18 @@ class PostController {
         }
     }
 
+    public function related() {
+        try {
+            $relations = RelatedPost::with(['post1', 'post2'])->get();
+            
+            if ($relations->isEmpty()) {
+                throw new Exception("هیچ رابطه‌ای بین پست‌ها وجود ندارد");
+            }
+            
+            require_once __DIR__ . '/../../views/posts/related.php';
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo "خطا: " . $e->getMessage();
+        }
+    }
 }
