@@ -22,19 +22,14 @@ class PostController {
 
     public function show($id)
     {
-        try {
-            $post = Post::with('user')->find($id);
-            
-            if (!$post) {
-                throw new Exception("Post not found");
-            }
-            
-            return view('posts/show', ['post' => $post]);
-            
-        } catch (Exception $e) {
-            error_log($e->getMessage());
-            abort(404, 'Post not found');
+        $post = Post::find($id);
+
+        if (!$post) {
+            // نمایش صفحه 404 سفارشی
+            return abort(404, 'Post not found');
         }
+
+        return view('posts/show', ['post' => $post]);
     }
 
     public function create() {
@@ -59,14 +54,14 @@ class PostController {
                 throw new Exception("Post not found");
             }
             
-            return view('posts/edit', ['post' => $post]);
+            view('posts/edit', ['post' => $post]);
             
         } catch (Exception $e) {
             error_log($e->getMessage());
             abort(404, 'Post not found');
         }
     }
-    
+
     public function update($id) {
         $post = Post::findOrFail($id);
         $post->update([
@@ -87,7 +82,7 @@ class PostController {
         try {
             DB::connection()->getPdo();
             echo "Connected successfully to: " . DB::connection()->getDatabaseName();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             die("Could not connect to the database. Error: " . $e->getMessage());
         }
     }

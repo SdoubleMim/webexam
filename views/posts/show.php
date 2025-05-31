@@ -1,18 +1,12 @@
-<?php 
-include_once ROOT_PATH . '/views/partials/header.php';
+<?php require 'views/partials/header.php'; ?>
 
-// Add validation
-if (!isset($post) || $post === null) {
-    die('Post not found');
-}
-?>
-
-<h2><?= htmlspecialchars($post->title ?? 'No Title') ?></h2>
-
-<p><?= nl2br(htmlspecialchars($post->content ?? 'No content available')) ?></p>
-
-<?php if (isset($post->user) && $post->user): ?>
-    <p>Author: <?= htmlspecialchars($post->user->Name) ?></p>
+<?php if (isset($post) && is_object($post)): ?>
+    <div class="post">
+        <h1><?= htmlspecialchars($post->title) ?></h1>
+        <p><?= nl2br(htmlspecialchars($post->content)) ?></p>
+    </div>
+<?php else: ?>
+    <p>پست مورد نظر پیدا نشد.</p>
 <?php endif; ?>
 
-<?php include_once ROOT_PATH . '/views/partials/footer.php'; ?>
+<?php require 'views/partials/footer.php'; ?>

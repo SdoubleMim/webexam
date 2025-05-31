@@ -9,18 +9,25 @@
 /**
  * Render a view with optional data
  */
-function view(string $path, array $data = []): void {
+function view(string $viewPath, array $data = []) {
+    // آرایه داده‌ها را به متغیرهای جداگانه تبدیل می‌کند
     extract($data);
-    require ROOT_PATH . "/views/{$path}.php";
+    
+    // فایل view را include می‌کند (با پسوند php و مسیر کامل)
+    include ROOT_PATH . "/views/{$viewPath}.php";
 }
+
 
 /**
  * Abort with HTTP status code
  */
-function abort(int $code, string $message = ''): void {
+function abort($code, $message = '')
+{
     http_response_code($code);
-    die($message);
+    require "views/404.php"; // می‌تونی فایل خاص برای 403، 500 و غیره هم بسازی
+    die;
 }
+
 
 /**
  * Redirect to URL

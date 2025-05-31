@@ -3,6 +3,11 @@ namespace App;
 
 class Route {
     private $routes = [];
+    private $basePath = '';
+
+    public function __construct($basePath = '') {
+        $this->basePath = $basePath;
+    }
 
     public function addRoute($method, $path, $handler) {
         $this->routes[] = [
@@ -15,71 +20,50 @@ class Route {
     public function dispatch() {
         $requestMethod = $_SERVER['REQUEST_METHOD'];
         $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-        // Remove base path
-        $basePath = '/webexam';
-        $requestUri = str_replace($basePath, '', $requestUri);
-        $requestUri = $requestUri ?: '/';
+        $requestUri = str_replace($this->basePath, '', $requestUri) ?: '/';
 
         foreach ($this->routes as $route) {
-            // Method check
-            if ($route['method'] !== $requestMethod) {
-                continue;
-            }
+            if ($route['method'] !== $requestMethod) continue;
 
-            // Convert route pattern to regex
             $pattern = $this->convertToRegex($route['path']);
-
             if (preg_match($pattern, $requestUri, $matches)) {
-                // حذف full match (index 0)
-                array_shift($matches);
-
-                // فقط مقادیر positional نگه‌دار (با کلید عددی)
-                $matches = array_filter($matches, 'is_int', ARRAY_FILTER_USE_KEY);
-                $matches = array_values($matches); // مرتب‌سازی مجدد از index صفر
-
-                // Handle the route
-                $this->handleRoute($route['handler'], $matches);
+                $this->handleRoute($route['handler'], array_values(array_filter($matches, 'is_int', ARRAY_FILTER_USE_KEY)));
                 return;
             }
         }
-
-        // 404 Not Found
         $this->abort(404);
     }
 
-
     private function convertToRegex($path) {
-        // Replace {param} with regex capture
-        $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>[^\/]+)', $path);
-        return '#^' . $pattern . '$#';
+        return '#^' . preg_replace('/\{(\w+)\}/', '(?P<$1>[^\/]+)', $path) . '$#';
     }
 
     private function handleRoute($handler, $params) {
-        if (is_callable($handler)) {
-            call_user_func_array($handler, $params);
+        if (is_string($handler)) {
+            if (!str_contains($handler, '@')) {
+                $this->abort(500, 'Invalid handler format (use "Controller@method")');
+            }
+            [$controllerName, $methodName] = explode('@', $handler);
+            $controllerClass = "App\\Controller\\$controllerName";
+            
+            if (!class_exists($controllerClass)) {
+                $this->abort(500, "Controller $controllerClass not found");
+            }
+            
+            $controller = new $controllerClass();
+            if (!method_exists($controller, $methodName)) {
+                $this->abort(500, "Method $methodName not found in $controllerClass");
+            }
+            
+            call_user_func_array([$controller, $methodName], $params);
             return;
         }
-
-        if (is_array($handler) && count($handler) === 2) {
-            $className = $handler[0];
-            $methodName = $handler[1];
-            
-            if (class_exists($className)) {
-                $controller = new $className();
-                
-                if (method_exists($controller, $methodName)) {
-                    call_user_func_array([$controller, $methodName], $params);
-                    return;
-                }
-            }
-        }
-
-        $this->abort(500, 'Invalid route handler');
+        $this->abort(500, 'Handler must be string or callable');
     }
 
     private function abort($code, $message = '') {
         http_response_code($code);
-        die($message);
+        $errorPage = __DIR__ . '/../views/' . $code . '.php';
+        file_exists($errorPage) ? require $errorPage : exit($message);
     }
 }
