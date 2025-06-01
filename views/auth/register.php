@@ -1,4 +1,4 @@
-<?php require_once __DIR__. '/../partials/header.php'; ?>
+<?php require_once __DIR__ . '/../partials/header.php'; ?>
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -8,10 +8,15 @@
                     <h3 class="text-center mb-0">Register</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    <?php if (isset($_SESSION['error'])): ?>
+                        <div class="alert alert-danger"><?= htmlspecialchars($_SESSION['error']) ?></div>
+                        <?php unset($_SESSION['error']); ?>
+                    <?php endif; ?>
+                    
+                    <form method="POST" action="/webexam/register">
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control bg-dark text-white" id="username" name="username" required>
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control bg-dark text-white" id="name" name="name" required>
                         </div>
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
@@ -19,7 +24,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control bg-dark text-white" id="password" name="password" required>
+                            <input type="password" class="form-control bg-dark text-white" id="password" name="password" minlength="6" required>
                         </div>
                         <div class="mb-3">
                             <label for="confirm_password" class="form-label">Confirm Password</label>
@@ -28,7 +33,7 @@
                         <button type="submit" class="btn btn-purple w-100">Register</button>
                     </form>
                     <div class="mt-3 text-center">
-                        <a href="/login" class="text-purple">Already have an account?</a>
+                        <a href="/webexam/login" class="text-purple">Already have an account? Login</a>
                     </div>
                 </div>
             </div>
@@ -36,4 +41,4 @@
     </div>
 </div>
 
-<?php require_once __DIR__ .'/../partials/footer.php'; ?>
+<?php require_once __DIR__ . '/../partials/footer.php'; ?>

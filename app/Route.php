@@ -47,26 +47,26 @@ class Route {
     private function handleRoute($handler, $params) {
         if (is_string($handler)) {
             if (!str_contains($handler, '@')) {
-                $this->abort(500, 'فرمت هندلر نامعتبر (باید به صورت "Controller@method" باشد)');
+                $this->abort(500, 'Invalid handler format (should be "Controller@method")');
             }
             
             [$controllerName, $methodName] = explode('@', $handler);
             $controllerClass = "App\\Controller\\$controllerName";
             
             if (!class_exists($controllerClass)) {
-                $this->abort(500, "کنترلر $controllerClass یافت نشد");
+                $this->abort(500, "Controller $controllerClass not found");
             }
             
             $controller = new $controllerClass();
             if (!method_exists($controller, $methodName)) {
-                $this->abort(500, "متد $methodName در کنترلر $controllerClass وجود ندارد");
+                $this->abort(500, "Method $methodName does not exist in $controllerClass");
             }
             
             call_user_func_array([$controller, $methodName], $params);
             return;
         }
         
-        $this->abort(500, 'هندلر باید رشته یا callable باشد');
+        $this->abort(500, 'Handler must be string or callable');
     }
 
     private function abort($code, $message = '') {

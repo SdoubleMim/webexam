@@ -1,105 +1,283 @@
 <?php
 namespace App\Controller;
-
+use Illuminate\Pagination\Paginator;
 use App\Model\Post;
-
-// At the top of PostController.php
-use Illuminate\Support\Facades\DB;
-
-use Exception; 
-
 use App\Model\RelatedPost;
-class PostController {
-    public function index() {
-        $posts = Post::with('user')->get();
-        view('posts/index', compact('posts'));
+use App\Model\User;
+use Exception;
+use Carbon\Carbon;
+class PostController 
+{
+    // Constants for error messages
+    const ERROR_NOT_AUTHORIZED = 'You are not authorized to perform this action';
+    const ERROR_POST_NOT_FOUND = 'Post not found';
+    const ERROR_VALIDATION = 'Title and content are required';
+    
+    /**
+     * Display a paginated list of posts
+     */
+    public function index() 
+    {
+        try {
+            $posts = Post::with(['user' => function($query) {
+                    $query->withDefault(['name' => '[Deleted User]']);
+                }])
+                ->orderBy('created_at', 'DESC')
+                ->simplePaginate(10); // تغییر به simplePaginate
+                
+            return $this->view('posts/index', [
+                'posts' => $posts,
+                'currentUser' => $_SESSION['user_id'] ?? null
+            ]);
+            
+        } catch (Exception $e) {
+            $this->abort(500, 'Error loading posts: ' . $e->getMessage());
+        }
     }
 
-        // Add this if not using Laravel's abort helper
-    protected function abort($code, $message = '') {
-        http_response_code($code);
-        die($message);
-    }
-
+    /**
+     * Display a single post with related posts
+     */
     public function show($id)
     {
-        $post = Post::find($id);
+        try {
+            $post = Post::with(['user', 'comments.user', 'views'])
+                ->findOrFail($id);
 
-        if (!$post) {
-            // نمایش صفحه 404 سفارشی
-            return abort(404, 'Post not found');
+            // Record view
+            if (isset($_SESSION['user_id'])) {
+                $post->views()->firstOrCreate([
+                    'user_id' => $_SESSION['user_id']
+                ]);
+            }
+
+            $relatedPosts = RelatedPost::where('post1_id', $id)
+                ->orWhere('post2_id', $id)
+                ->with(['post1.user', 'post2.user'])
+                ->limit(5)
+                ->get();
+
+            return $this->view('posts/show', [
+                'post' => $post,
+                'relatedPosts' => $relatedPosts,
+                'canEdit' => $this->canEditPost($post)
+            ]);
+        } catch (Exception $e) {
+            $this->abort(404, self::ERROR_POST_NOT_FOUND);
         }
-
-        return view('posts/show', ['post' => $post]);
+    }
+        /**
+     * Show post creation form
+     */
+    public function create() 
+    {
+        $this->requireAuth();
+        return $this->view('posts/create');
     }
 
-    public function create() {
-        view('posts/create');
+    /**
+     * Store a new post
+     */
+    public function store() 
+    {
+        $this->requireAuth();
+        
+        try {
+            $data = $this->validatePostRequest($_POST);
+            
+            $post = Post::create([
+                'title' => $data['title'],
+                'content' => $data['content'],
+                'user_id' => $_SESSION['user_id'],
+                'status' => 'published'
+            ]);
+
+            $this->setFlash('success', 'Post created successfully!');
+            return $this->redirect("/posts/{$post->id}");
+
+        } catch (Exception $e) {
+            $this->setFlash('error', $e->getMessage());
+            return $this->redirect('/posts/create');
+        }
     }
 
-    public function store() {
-        Post::create([
-            'title' => $_POST['title'],
-            'content' => $_POST['content'],
-            'user_id' => $_POST['user_id'] ?? 1 // Default to 1 if not provided
-        ]);
-        redirect('/posts');
-    }
-
+    /**
+     * Show post edit form
+     */
     public function edit($id)
     {
+        $this->requireAuth();
+        
         try {
-            $post = Post::find($id);
+            $post = Post::findOrFail($id);
+            $this->verifyOwnership($post);
             
-            if (!$post) {
-                throw new Exception("Post not found");
-            }
-            
-            view('posts/edit', ['post' => $post]);
-            
+            return $this->view('posts/edit', [
+                'post' => $post
+            ]);
+
         } catch (Exception $e) {
-            error_log($e->getMessage());
-            abort(404, 'Post not found');
+            $this->setFlash('error', $e->getMessage());
+            return $this->redirect('/posts');
         }
     }
 
-    public function update($id) {
-        $post = Post::findOrFail($id);
-        $post->update([
-            'title' => $_POST['title'],
-            'content' => $_POST['content'],
-        ]);
-        redirect("/posts/{$id}");
-    }
-
-    public function delete($id) {
-        $post = Post::findOrFail($id);
-        $post->delete();
-        redirect('/posts');
-    }
-
-    // Temporary connection test method
-    public function testConnection() {
+    /**
+     * Update an existing post
+     */
+    public function update($id) 
+    {
+        $this->requireAuth();
+        
         try {
-            DB::connection()->getPdo();
-            echo "Connected successfully to: " . DB::connection()->getDatabaseName();
+            $post = Post::findOrFail($id);
+            $this->verifyOwnership($post);
+            
+            $data = $this->validatePostRequest($_POST);
+            
+            $post->update([
+                'title' => $data['title'],
+                'content' => $data['content'],
+                'updated_at' => Carbon::now()
+            ]);
+
+            $this->setFlash('success', 'Post updated successfully!');
+            return $this->redirect("/posts/{$post->id}");
+
         } catch (Exception $e) {
-            die("Could not connect to the database. Error: " . $e->getMessage());
+            $this->setFlash('error', $e->getMessage());
+            return $this->redirect("/posts/{$id}/edit");
         }
     }
 
-    public function related() {
+    /**
+     * Delete a post
+     */
+    public function delete($id) 
+    {
+        $this->requireAuth();
+        
         try {
-            $relations = RelatedPost::with(['post1', 'post2'])->get();
+            $post = Post::findOrFail($id);
+            $this->verifyOwnership($post);
             
-            if ($relations->isEmpty()) {
-                throw new Exception("هیچ رابطه‌ای بین پست‌ها وجود ندارد");
-            }
-            
-            require_once __DIR__ . '/../../views/posts/related.php';
+            $post->delete();
+
+            $this->setFlash('success', 'Post deleted successfully!');
+            return $this->redirect('/posts');
+
         } catch (Exception $e) {
-            http_response_code(500);
-            echo "خطا: " . $e->getMessage();
+            $this->setFlash('error', $e->getMessage());
+            return $this->redirect('/posts');
         }
+    }
+
+    /**
+     * Display related posts
+     */
+    private function validatePostRequest($data)
+    {
+        if (empty($data['title'])) {  // پرانتز بسته اضافه شد
+            throw new Exception('Post title is required');
+        }
+        
+        if (empty($data['content'])) {
+            throw new Exception('Post content is required');
+        }
+        
+        if (strlen($data['title']) > 255) {
+            throw new Exception('Title must be less than 255 characters');
+        }
+        
+        return [
+            'title' => $this->sanitize($data['title']),
+            'content' => $this->sanitize($data['content'])
+        ];
+    }
+    /**
+     * Check if current user can edit the post
+     */
+    private function canEditPost($post)
+    {
+        return isset($_SESSION['user_id']) && 
+               ($post->user_id == $_SESSION['user_id'] || $this->isAdmin());
+    }
+
+    /**
+     * Check if user is admin
+     */
+    private function isAdmin()
+    {
+        // Implement your admin check logic
+        return false; 
+    }
+
+    /**
+     * Verify post ownership
+     */
+    private function verifyOwnership($post)
+    {
+        if (!$this->canEditPost($post)) {
+            throw new Exception(self::ERROR_NOT_AUTHORIZED);
+        }
+    }
+
+    /**
+     * Require authenticated user
+     */
+    private function requireAuth()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            $this->setFlash('error', 'Please login to continue');
+            $this->redirect('/login');
+            exit;
+        }
+    }
+
+    /**
+     * Sanitize input data
+     */
+    private function sanitize($input)
+    {
+        return htmlspecialchars(strip_tags(trim($input)));
+    }
+
+    /**
+     * Set flash message
+     */
+    private function setFlash($type, $message)
+    {
+        $_SESSION['flash'] = [
+            'type' => $type,
+            'message' => $message
+        ];
+    }
+
+    /**
+     * Render view
+     */
+    private function view($path, $data = [])
+    {
+        extract($data);
+        require __DIR__ . "/../../views/{$path}.php";
+    }
+
+    /**
+     * Redirect to URL
+     */
+    private function redirect($url)
+    {
+        header("Location: /webexam{$url}");
+        exit;
+    }
+
+    /**
+     * Abort with error
+     */
+    private function abort($code, $message)
+    {
+        http_response_code($code);
+        $this->view("errors/{$code}", ['message' => $message]);
+        exit;
     }
 }

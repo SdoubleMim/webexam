@@ -1,42 +1,107 @@
 <?php
-// app/Controller/AuthController.php
 namespace App\Controller;
 
-class AuthController {
-    public function login() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // پردازش لاگین
-            $this->handleLogin();
-            return;
+use App\Model\User;
+use Exception;
+
+class AuthController 
+{
+    public function login() 
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $email = $this->sanitizeInput($_POST['email'] ?? '');
+                $password = $_POST['password'] ?? '';
+                
+                if (empty($email) || empty($password)) {
+                    throw new Exception('Email and password are required');
+                }
+                
+                $user = User::where('email', $email)->first();
+                
+                if (!$user || !$user->verifyPassword($password)) {
+                    throw new Exception('Invalid credentials');
+                }
+                
+                $_SESSION['user'] = [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ];
+                
+                header('Location: /webexam/');
+                exit;
+            }
+            
+            require_once __DIR__ . '/../../views/auth/login.php';
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /webexam/login');
+            exit;
         }
-        
-        // نمایش فرم لاگین
-        require_once __DIR__ . '/../../views/auth/login.php';
     }
 
-    private function handleLogin() {
-        // پیاده‌سازی عملیات لاگین
-    }
-
-    public function register() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // پردازش ثبت‌نام
-            $this->handleRegister();
-            return;
+    public function register() 
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $name = $this->sanitizeInput($_POST['name'] ?? '');
+                $email = $this->sanitizeInput($_POST['email'] ?? '');
+                $password = $_POST['password'] ?? '';
+                $confirmPassword = $_POST['confirm_password'] ?? '';
+                
+                if (empty($name) || empty($email) || empty($password)) {
+                    throw new Exception('All fields are required');
+                }
+                
+                if (strlen($password) < 6) {
+                    throw new Exception('Password must be at least 6 characters');
+                }
+                
+                if ($password !== $confirmPassword) {
+                    throw new Exception('Passwords do not match');
+                }
+                
+                if (User::where('email', $email)->exists()) {
+                    throw new Exception('Email already registered');
+                }
+                
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'password' => $password
+                ]);
+                
+                $_SESSION['user'] = [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ];
+                
+                header('Location: /webexam/');
+                exit;
+            }
+            
+            require_once __DIR__ . '/../../views/auth/register.php';
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /webexam/register');
+            exit;
         }
-        
-        // نمایش فرم ثبت‌نام
-        require_once __DIR__ . '/../../views/auth/register.php';
     }
 
-    private function handleRegister() {
-        // پیاده‌سازی عملیات ثبت‌نام
-    }
-
-    public function logout() {
-        // عملیات خروج کاربر
+    public function logout() 
+    {
+        session_unset();
         session_destroy();
-        header('Location: /login');
+        header('Location: /webexam/login');
         exit;
+    }
+    
+    private function sanitizeInput($data) 
+    {
+        return htmlspecialchars(strip_tags(trim($data)));
     }
 }
