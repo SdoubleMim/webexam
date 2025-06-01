@@ -21,27 +21,30 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$router = new Route('/webexam');
+// Initialize router with base path
+$router = Route::getInstance('/webexam');
 
 // Routes
-$router->addRoute("GET", "/", "FrontController@home");
-$router->addRoute("GET", "/users", "UserController@index");
-$router->addRoute("GET", "/users/{id}", "UserController@show");
-$router->addRoute("GET", "/posts", "PostController@index");
-$router->addRoute("GET", "/posts/related", "PostController@related");
-$router->addRoute("GET", "/posts/create", "PostController@create");
-$router->addRoute("POST", "/posts", "PostController@store");
-$router->addRoute("GET", "/posts/{id}", "PostController@show");
-$router->addRoute("GET", "/posts/{id}/edit", "PostController@edit");
-$router->addRoute("POST", "/posts/{id}", "PostController@update");
-$router->addRoute("POST", "/posts/{id}/delete", "PostController@delete");
-$router->addRoute("GET", "/login", "AuthController@login");
-$router->addRoute("POST", "/login", "AuthController@login");
-$router->addRoute("GET", "/register", "AuthController@register");
-$router->addRoute("POST", "/register", "AuthController@register");
-$router->addRoute("GET", "/logout", "AuthController@logout");
-$router->addRoute("GET", "/test", function () {
+Route::get('/', 'FrontController@home');
+Route::get('/users', 'UserController@index');
+Route::get('/users/{id}', 'UserController@show');
+Route::get('/posts', 'PostController@index');
+Route::get('/posts/{id}/related', 'PostController@related'); // تغییر مسیر به این شکل
+Route::get('/posts/create', 'PostController@create');
+Route::post('/posts', 'PostController@store');
+Route::get('/posts/{id}/users', 'PostController@users');
+Route::get('/posts/{id}', 'PostController@show');
+Route::get('/posts/{id}/edit', 'PostController@edit');
+Route::post('/posts/{id}', 'PostController@update');
+Route::post('/posts/{id}/delete', 'PostController@delete');
+Route::get('/login', 'AuthController@login');
+Route::post('/login', 'AuthController@login');
+Route::get('/register', 'AuthController@register');
+Route::post('/register', 'AuthController@register');
+Route::get('/logout', 'AuthController@logout');
+Route::get('/test', function () {
     echo "Test route works!";
 });
 
+// Dispatch the router
 $router->dispatch();

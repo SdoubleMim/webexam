@@ -3,7 +3,7 @@
         'name' => 'matilda/webexam',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '8c8457e004d3f18b3c632dcc427df9f4ee95b7cc',
+        'reference' => 'bc727b7a4669e2bcfb557aa602c52b460efa6f22',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -121,7 +121,7 @@
         'matilda/webexam' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '8c8457e004d3f18b3c632dcc427df9f4ee95b7cc',
+            'reference' => 'bc727b7a4669e2bcfb557aa602c52b460efa6f22',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

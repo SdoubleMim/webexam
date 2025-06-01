@@ -3,6 +3,9 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Model\Post;
+use App\Model\RelatedPost;
+use App\Model\PostView;
 
 class User extends Model 
 {
@@ -20,33 +23,26 @@ class User extends Model
         'password'
     ];
 
-    /**
-     * User's posts relationship
-     */
+    protected $appends = [
+        'formatted_posts_count',
+        'last_name'
+    ];
+
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class, 'user_id');
     }
 
-    /**
-     * Related posts relationship
-     */
     public function relatedPosts(): HasMany
     {
         return $this->hasMany(RelatedPost::class, 'post1_id');
     }
 
-    /**
-     * Post views relationship
-     */
     public function postViews(): HasMany
     {
         return $this->hasMany(PostView::class, 'user_id');
     }
 
-    /**
-     * Automatically hash passwords
-     */
     public function setPasswordAttribute($value): void
     {
         if (!empty($value)) {
@@ -54,11 +50,20 @@ class User extends Model
         }
     }
 
-    /**
-     * Verify user password
-     */
     public function verifyPassword($password): bool
     {
         return password_verify($password, $this->password);
+    }
+
+    public function getFormattedPostsCountAttribute(): int
+    {
+        $count = $this->posts()->count();
+        return min(max($count, 5), 7);
+    }
+
+    public function getLastNameAttribute(): string
+    {
+        $parts = explode(' ', trim($this->name));
+        return count($parts) > 1 ? end($parts) : $this->name;
     }
 }

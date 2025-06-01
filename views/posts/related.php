@@ -1,32 +1,33 @@
-<?php require_once __DIR__ . '/../partials/header.php'; ?>
+<?php require __DIR__ . '/../partials/header.php'; ?>
 
 <div class="container mt-4">
-    <h2 class="mb-4">روابط بین پست‌ها</h2>
-    
-    <?php if (count($relations) > 0): ?>
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>ID رابطه</th>
-                        <th>پست اول</th>
-                        <th>پست دوم</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($relations as $relation): ?>
-                    <tr>
-                        <td><?= $relation->id ?></td>
-                        <td>پست #<?= $relation->post1_id ?> (<?= $relation->post1->title ?? 'بدون عنوان' ?>)</td>
-                        <td>پست #<?= $relation->post2_id ?> (<?= $relation->post2->title ?? 'بدون عنوان' ?>)</td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+    <?php if (isset($post)): ?>
+        <h2><?= htmlspecialchars($title) ?></h2>
+        
+        <?php if (isset($relatedPosts) && $relatedPosts->count() > 0): ?>
+            <div class="row">
+                <?php foreach ($relatedPosts as $relatedPost): ?>
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title"><?= htmlspecialchars($relatedPost->title) ?></h5>
+                                <p class="card-text">
+                                    By: <?= htmlspecialchars($relatedPost->user->name ?? 'Unknown') ?>
+                                </p>
+                                <a href="/webexam/posts/<?= $relatedPost->id ?>" class="btn btn-primary">
+                                    View Post
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <div class="alert alert-info">No related posts found</div>
+        <?php endif; ?>
     <?php else: ?>
-        <div class="alert alert-warning">هیچ رابطه‌ای بین پست‌ها ثبت نشده است</div>
+        <div class="alert alert-danger">Post not found</div>
     <?php endif; ?>
 </div>
 
-<?php require_once __DIR__ . '/../partials/footer.php'; ?>
+<?php require __DIR__ . '/../partials/footer.php'; ?>

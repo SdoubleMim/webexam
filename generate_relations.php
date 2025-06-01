@@ -5,19 +5,14 @@ require __DIR__ . '/config/database.php';
 use Illuminate\Database\Capsule\Manager as Capsule;
 use App\Model\{Post, RelatedPost};
 
+// تنظیمات دیتابیس
 $capsule = new Capsule;
 $capsule->addConnection(require __DIR__ . '/config/database.php');
 $capsule->setAsGlobal();
 $capsule->bootEloquent();
 
-echo "Posts:\n";
-print_r(Post::all()->toArray());
+// تولید روابط
+RelatedPost::generateRandomRelations();
 
-echo "\nRelated Posts:\n";
-print_r(RelatedPost::all()->toArray());
-
-echo "\nFirst post relations:\n";
-$firstPost = Post::first();
-if ($firstPost) {
-    print_r($firstPost->relatedPosts()->get()->toArray());
-}
+echo "Random post relations generated successfully!\n";
+echo "Total relations created: " . RelatedPost::count() . "\n";

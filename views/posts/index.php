@@ -1,6 +1,6 @@
-<?php include_once ROOT_PATH . '/views/partials/header.php'; ?>
+<?php include_once __DIR__ . '/../partials/header.php'; ?>
 
-<div class="container">
+<div class="container mt-4">
     <h2>Posts List</h2>
     
     <?php if (isset($_SESSION['user_id'])): ?>
@@ -17,10 +17,9 @@
             </h5>
             <p class="mb-1">Author: <?= htmlspecialchars($post->user->name) ?></p>
             
-            <?php if ($currentUser === $post->user_id): ?>
+            <?php if (isset($currentUser) && $currentUser === $post->user_id): ?>
                 <div class="mt-2">
                     <a href="/webexam/posts/<?= $post->id ?>/edit" class="btn btn-sm btn-warning">Edit</a>
-                    
                     <form action="/webexam/posts/<?= $post->id ?>/delete" method="POST" style="display:inline">
                         <button type="submit" class="btn btn-sm btn-danger" 
                             onclick="return confirm('Are you sure?')">Delete</button>
@@ -32,4 +31,4 @@
     </div>
 </div>
 
-<?php include_once ROOT_PATH . '/views/partials/footer.php'; ?>
+<?php include_once __DIR__ . '/../partials/footer.php'; ?>

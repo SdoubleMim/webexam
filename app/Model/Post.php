@@ -2,7 +2,7 @@
 namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Model\{User, PostView};
+use App\Model\{User, PostView, RelatedPost};
 
 class Post extends Model {
     protected $table = 'posts';
@@ -16,37 +16,21 @@ class Post extends Model {
         'user_id'
     ];
     
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime'
-    ];
-
-    /**
-     * Relationship to User model
-     */
     public function user() {
-        return $this->belongsTo(User::class, 'user_id', 'ID')
+        return $this->belongsTo(User::class, 'user_id')
             ->withDefault([
-                'Name' => 'Deleted User'
+                'name' => 'Deleted User'
             ]);
     }
 
-    /**
-     * Related posts relationship
-     */
-    public function relatedPosts() {
-        return $this->belongsToMany(
-            Post::class, 
-            'related_posts', 
-            'post_1_id', 
-            'post_2_id'
-        )->withTimestamps();
+    public function relatedPosts()
+    {
+        return $this->belongsToMany(Post::class, 'related_posts', 'post_id', 'related_post_id')
+                    ->withTimestamps();
     }
 
-    /**
-     * Post views relationship
-     */
-    public function postViews() {
+    public function views()
+    {
         return $this->hasMany(PostView::class, 'post_id');
     }
 }
