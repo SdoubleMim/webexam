@@ -40,14 +40,14 @@ class AuthController
                     throw new Exception('Email already registered');
                 }
 
-                // Create user
+                // Create user - رمز عبور خام ارسال می‌شود (مدل User آن را هش می‌کند)
                 $user = User::create([
                     'name' => $name,
                     'email' => $email,
                     'password' => password_hash($password, PASSWORD_BCRYPT)
                 ]);
 
-                // Generate 5-7 sample posts
+                // Generate sample posts
                 $postCount = rand(5, 7);
                 for ($i = 1; $i <= $postCount; $i++) {
                     Post::create([
@@ -80,33 +80,42 @@ class AuthController
 
     public function login()
     {
-        try {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $email = $this->sanitizeInput($_POST['email'] ?? '');
-                $password = $_POST['password'] ?? '';
-                
+        error_log("POST data: " . print_r($_POST, true));
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = $this->sanitizeInput($_POST['email']);
+            $password = $_POST['password'];
+
+            try {
                 $user = User::where('email', $email)->first();
-                
-                if ($user && password_verify($password, $user->password)) {
-                    $_SESSION['user'] = [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email
-                    ];
-                    
-                    header('Location: /webexam/posts');
-                    exit;
+
+                if (!$user) {
+                    throw new Exception('User not found');
                 }
-                
-                throw new Exception('Invalid credentials');
+
+                if (!password_verify($password, $user->password)) {
+                    error_log("Password mismatch for user: " . $email);
+                    throw new Exception('Invalid credentials');
+                }
+
+                $_SESSION['user'] = [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ];
+
+                header('Location: /webexam/posts');
+                exit;
+            } catch (Exception $e) {
+                $this->view('auth/login', [
+                    'error' => $e->getMessage()
+                ]);
             }
-            
+        } else {
             $this->view('auth/login');
-            
-        } catch (Exception $e) {
-            $this->view('auth/login', [
-                'error' => $e->getMessage()
-            ]);
         }
     }
 

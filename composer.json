@@ -5,7 +5,8 @@
     "require": {
         "illuminate/database": "^8.0",
         "illuminate/events": "^8.0",
-        "illuminate/pagination": "^8.83"
+        "illuminate/pagination": "^8.83",
+        "vlucas/phpdotenv": "^5.0"
     },
     "autoload": {
         "psr-4": {

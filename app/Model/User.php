@@ -11,7 +11,7 @@ class User extends Model
 {
     protected $table = 'users';
     protected $primaryKey = 'id';
-    public $timestamps = false;
+    public $timestamps = true;
     
     protected $fillable = [
         'name',
@@ -28,6 +28,23 @@ class User extends Model
         'last_name'
     ];
 
+public function setPasswordAttribute($value)
+    {
+        if (!empty($value)) {
+            // اگر مقدار قبلاً هش نشده باشد
+            if (password_get_info($value)['algo'] === 0) {
+                $this->attributes['password'] = password_hash($value, PASSWORD_BCRYPT);
+            } else {
+                $this->attributes['password'] = $value;
+            }
+        }
+    }
+    public function verifyPassword($password): bool
+    {
+        return password_verify($password, $this->password);
+    }
+
+    // روابط و متدهای دیگر بدون تغییر
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class, 'user_id');
@@ -41,18 +58,6 @@ class User extends Model
     public function postViews(): HasMany
     {
         return $this->hasMany(PostView::class, 'user_id');
-    }
-
-    public function setPasswordAttribute($value): void
-    {
-        if (!empty($value)) {
-            $this->attributes['password'] = password_hash($value, PASSWORD_BCRYPT);
-        }
-    }
-
-    public function verifyPassword($password): bool
-    {
-        return password_verify($password, $this->password);
     }
 
     public function getFormattedPostsCountAttribute(): int

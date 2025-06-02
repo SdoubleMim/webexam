@@ -1,10 +1,8 @@
 <?php
-// views/home.php
 require_once __DIR__ . '/partials/header.php';
 
-// Check if user is logged in
 $isLoggedIn = isset($_SESSION['user_id']);
-$baseUrl = '/webexam'; // Adjust if your project is in a subfolder
+$baseUrl = '/webexam';
 ?>
 
 <div class="container my-5">
@@ -18,7 +16,7 @@ $baseUrl = '/webexam'; // Adjust if your project is in a subfolder
             <div class="mt-5">
                 <div class="row g-4">
                     <!-- Posts Section -->
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card bg-dark-purple h-100">
                             <div class="card-body">
                                 <h5 class="card-title text-purple">📝 Posts</h5>
@@ -34,12 +32,23 @@ $baseUrl = '/webexam'; // Adjust if your project is in a subfolder
                     </div>
                     
                     <!-- Users Section -->
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card bg-dark-purple h-100">
                             <div class="card-body">
                                 <h5 class="card-title text-purple">👥 Users</h5>
                                 <p class="card-text">View registered users</p>
                                 <a href="<?= $baseUrl ?>/users" class="btn btn-sm btn-outline-purple">View Users</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Related Posts Section -->
+                    <div class="col-md-4">
+                        <div class="card bg-dark-purple h-100">
+                            <div class="card-body">
+                                <h5 class="card-title text-purple">🔗 Related Posts</h5>
+                                <p class="card-text">View all post relations</p>
+                                <a href="<?= $baseUrl ?>/related-posts" class="btn btn-sm btn-outline-purple">View Relations</a>
                             </div>
                         </div>
                     </div>
