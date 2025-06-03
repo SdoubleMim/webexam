@@ -16,7 +16,7 @@ $baseUrl = '/webexam';
             <div class="mt-5">
                 <div class="row g-4">
                     <!-- Posts Section -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card bg-dark-purple h-100">
                             <div class="card-body">
                                 <h5 class="card-title text-purple">📝 Posts</h5>
@@ -32,7 +32,7 @@ $baseUrl = '/webexam';
                     </div>
                     
                     <!-- Users Section -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card bg-dark-purple h-100">
                             <div class="card-body">
                                 <h5 class="card-title text-purple">👥 Users</h5>
@@ -43,12 +43,23 @@ $baseUrl = '/webexam';
                     </div>
                     
                     <!-- Related Posts Section -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card bg-dark-purple h-100">
                             <div class="card-body">
                                 <h5 class="card-title text-purple">🔗 Related Posts</h5>
                                 <p class="card-text">View all post relations</p>
                                 <a href="<?= $baseUrl ?>/related-posts" class="btn btn-sm btn-outline-purple">View Relations</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Post Views Section -->
+                    <div class="col-md-3">
+                        <div class="card bg-dark-purple h-100">
+                            <div class="card-body">
+                                <h5 class="card-title text-purple">👀 Post Views</h5>
+                                <p class="card-text">View post statistics</p>
+                                <a href="<?= $baseUrl ?>/matrix_calculator.php" class="btn btn-sm btn-outline-purple">View Analytics</a>
                             </div>
                         </div>
                     </div>
@@ -60,7 +71,6 @@ $baseUrl = '/webexam';
                 <?php if ($isLoggedIn): ?>
                     <div class="d-flex gap-3 justify-content-center">
                         <a href="<?= $baseUrl ?>/dashboard" class="btn btn-purple px-4">Dashboard</a>
-                        <a href="<?= $baseUrl ?>/logout" class="btn btn-outline-purple px-4">Logout</a>
                     </div>
                 <?php else: ?>
                     <div class="d-flex gap-3 justify-content-center">
