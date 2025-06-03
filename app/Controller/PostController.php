@@ -70,27 +70,6 @@ class PostController
         }
     }
 
-    // public function allRelations()
-    // {
-    //     try {
-    //         // ابتدا پست‌های حذف شده را جداگانه لود کنیم
-    //         $relations = RelatedPost::with(['post.user', 'relatedPost.user'])
-    //                     ->orderBy('created_at', 'desc')
-    //                     ->get();
-
-    //         // فیلتر کردن روابط معتبر
-    //         $validRelations = $relations->filter(function($relation) {
-    //             return $relation->post !== null && $relation->relatedPost !== null;
-    //         });
-
-    //         $this->view('posts/all_relations', [
-    //             'relations' => $validRelations,
-    //             'title' => 'All Post Relations'
-    //         ]);
-    //     } catch (Exception $e) {
-    //         $this->abort(500, 'Error loading relations: ' . $e->getMessage());
-    //     }
-    // }
 
     public function allRelations()
     {
@@ -156,7 +135,11 @@ class PostController
     public function edit($id)
     {
         try {
-            $post = Post::findOrFail($id);
+            $post = Post::find($id); // به جای findOrFail
+            
+            if (!$post) {
+                throw new Exception('Post not found');
+            }
 
             if (!$this->canEditPost($post)) {
                 throw new Exception(self::ERROR_NOT_AUTHORIZED);
@@ -167,10 +150,9 @@ class PostController
                 'currentUser' => $_SESSION['user_id'] ?? null
             ]);
         } catch (Exception $e) {
-            $this->abort(403, $e->getMessage());
+            $this->abort(404, $e->getMessage()); // تغییر کد خطا به 404
         }
     }
-
     public function update($id)
     {
         try {

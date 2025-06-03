@@ -15,15 +15,23 @@
                     <?= htmlspecialchars($post->title) ?>
                 </a>
             </h5>
+            <p class="text-muted small">
+            Created: <?= $post->created_at ?> 
+            | Views: <?= $post->views->count() ?>
+            </p>
             <p class="mb-1">Author: <?= htmlspecialchars($post->user->name) ?></p>
             
             <?php if (isset($currentUser) && $currentUser === $post->user_id): ?>
-                <div class="mt-2">
-                    <a href="/webexam/posts/<?= $post->id ?>/edit" class="btn btn-sm btn-warning">Edit</a>
-                    <form action="/webexam/posts/<?= $post->id ?>/delete" method="POST" style="display:inline">
-                        <button type="submit" class="btn btn-sm btn-danger" 
-                            onclick="return confirm('Are you sure?')">Delete</button>
-                    </form>
+                <div class="mt-2 btn-group">
+                    <a href="/webexam/posts/<?= $post->id ?>" class="btn btn-sm btn-info">View Details</a>
+                    <?php if (isset($currentUser) && $currentUser === $post->user_id): ?>
+                        <a href="/webexam/posts/<?= $post->id ?>/edit" class="btn btn-sm btn-warning">Edit</a>
+                        <form action="/webexam/posts/<?= $post->id ?>" method="POST" style="display:inline">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="btn btn-sm btn-danger" 
+                                onclick="return confirm('Are you sure to delete this post?')">Delete</button>
+                        </form>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </div>

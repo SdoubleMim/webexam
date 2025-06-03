@@ -25,15 +25,8 @@ if (session_status() === PHP_SESSION_NONE) {
 // Initialize router with base path
 $router = Route::getInstance('/webexam');
 
-// Related Posts Routes
-$router->get('/posts/{id}/relations', 'RelatedPostController@manageRelations');
-$router->post('/related-posts', 'RelatedPostController@storeRelation');
-$router->delete('/related-posts/{id}', 'RelatedPostController@deleteRelation');
-
-
 
 // Main Routes
-// اضافه کردن این مسیر جدید:
 
 $router->get('/related-posts', 'PostController@allRelations');
 $router->get('/', 'FrontController@home');
@@ -57,40 +50,8 @@ $router->get('/test', function () {
     echo "Test route works!";
 });
 
-// =====================================
-// New Routes Added Below (Maintaining the same style)
-// =====================================
-
-// API Routes
-$router->get('/api/posts', 'Api\PostController@index');
-$router->get('/api/posts/{id}', 'Api\PostController@show');
-$router->post('/api/posts', 'Api\PostController@store');
-$router->put('/api/posts/{id}', 'Api\PostController@update');
-$router->delete('/api/posts/{id}', 'Api\PostController@delete');
-
-// Admin Routes
-$router->get('/admin/dashboard', 'AdminController@dashboard');
-$router->get('/admin/users', 'AdminController@users');
-$router->get('/admin/posts', 'AdminController@posts');
-
-// Profile Routes
-$router->get('/profile', 'ProfileController@show');
-$router->get('/profile/edit', 'ProfileController@edit');
-$router->post('/profile/update', 'ProfileController@update');
-$router->post('/profile/change-password', 'ProfileController@changePassword');
 
 // Category Routes
-$router->get('/categories', 'CategoryController@index');
-$router->get('/categories/{id}', 'CategoryController@show');
-$router->get('/categories/{id}/posts', 'CategoryController@posts');
-
-// Search Route
-$router->get('/search', 'SearchController@index');
-
-// Contact Routes
-$router->get('/contact', 'ContactController@show');
-$router->post('/contact', 'ContactController@submit');
-
 // Post Routes
 $router->get('/posts', 'PostController@index');
 $router->get('/posts/create', 'PostController@create');
@@ -102,14 +63,31 @@ $router->delete('/posts/{id}', 'PostController@delete');
 $router->get('/posts/{id}/users', 'PostController@users');
 $router->get('/posts/{id}/related', 'PostController@related');
 
-// Related Posts Routes
-$router->get('/related-posts', 'PostController@allRelations');
-$router->get('/posts/{id}/relations', 'RelatedPostController@manageRelations');
-$router->post('/related-posts', 'RelatedPostController@storeRelation');
-$router->delete('/related-posts/{id}', 'RelatedPostController@deleteRelation');
-
-
+$router->put('/posts/{id}', 'PostController@update');  // برای ویرایش
+$router->delete('/posts/{id}', 'PostController@delete'); // برای حذف
 
 
 // Dispatch the router
 $router->dispatch();
+
+
+// کد موقت برای پر کردن post_views
+if (isset($_GET['fill_views'])) {
+    $db = new PDO('mysql:host=localhost;dbname=webexam_database', 'username', 'password');
+    
+    // پاکسازی جدول
+    $db->exec("TRUNCATE TABLE post_views");
+    
+    // دریافت تمام پست‌ها
+    $posts = $db->query("SELECT id FROM posts")->fetchAll(PDO::FETCH_OBJ);
+    
+    // درج داده‌های تصادفی
+    foreach ($posts as $post) {
+        $views = rand(100, 1000);
+        $db->exec("INSERT INTO post_views (post_id, views, created_at, updated_at) 
+                  VALUES ($post->id, $views, NOW(), NOW())");
+    }
+    
+    echo "Post views filled successfully!";
+    exit;
+}
